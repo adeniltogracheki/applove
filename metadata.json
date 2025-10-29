@@ -1,0 +1,7 @@
+{
+  "name": "Love Space",
+  "description": "Um espaço digital moderno para casais se conectarem. Converse em tempo real, compartilhe sua localização, jogue, cuide de um pet virtual e fortaleça seu relacionamento com ideias e perguntas geradas por IA.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
