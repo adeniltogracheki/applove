@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # --- SERVIÇO DO BANCO DE DADOS ---
+  db:
+    image: postgres:15-alpine
+    container_name: lovespace-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Este script cria a tabela 'users' na primeira inicialização
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file:
+      - .env # Carrega as credenciais do banco a partir do arquivo .env
+    restart: unless-stopped
+    networks:
+      - lovespace-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- SERVIÇO DO BACKEND (API) ---
+  backend:
+    build:
+      context: ./backend # Constrói a imagem a partir do Dockerfile em ./backend/
+    container_name: lovespace-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy # Garante que o banco de dados esteja saudável antes do backend iniciar
+    env_file:
+      - .env
+    networks:
+      - lovespace-net
+      - traefik-proxy # Conecta à rede do Traefik
+    labels:
+      # --- Configuração do Traefik para o Backend ---
+      - "traefik.enable=true"
+      # Roteador para HTTP (será redirecionado para HTTPS pelo Traefik globalmente)
+      - "traefik.http.routers.lovespace-backend-http.rule=Host(`lovespace.seusite.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.lovespace-backend-http.entrypoints=web"
+      # Roteador para HTTPS
+      - "traefik.http.routers.lovespace-backend-https.rule=Host(`lovespace.seusite.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.lovespace-backend-https.entrypoints=websecure"
+      - "traefik.http.routers.lovespace-backend-https.tls=true"
+      - "traefik.http.routers.lovespace-backend-https.tls.certresolver=myresolver" # IMPORTANTE: Substitua 'myresolver' pelo nome do seu cert resolver do Let's Encrypt no Traefik
+      # Middleware para remover o prefixo /api da URL antes de enviar para o container
+      - "traefik.http.routers.lovespace-backend-https.middlewares=lovespace-stripprefix"
+      - "traefik.http.middlewares.lovespace-stripprefix.stripprefix.prefixes=/api"
+      # Serviço que aponta para a porta do container
+      - "traefik.http.services.lovespace-backend-svc.loadbalancer.server.port=3000"
+
+  # --- SERVIÇO DO FRONTEND (REACT APP) ---
+  frontend:
+    build:
+      context: ./frontend # Constrói a imagem a partir do Dockerfile em ./frontend/
+    container_name: lovespace-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - traefik-proxy # Conecta à rede do Traefik
+    labels:
+      # --- Configuração do Traefik para o Frontend ---
+      - "traefik.enable=true"
+      # Roteador para HTTP (será redirecionado para HTTPS)
+      - "traefik.http.routers.lovespace-frontend-http.rule=Host(`lovespace.seusite.com`)"
+      - "traefik.http.routers.lovespace-frontend-http.entrypoints=web"
+      # Roteador para HTTPS
+      - "traefik.http.routers.lovespace-frontend-https.rule=Host(`lovespace.seusite.com`)"
+      - "traefik.http.routers.lovespace-frontend-https.entrypoints=websecure"
+      - "traefik.http.routers.lovespace-frontend-https.tls=true"
+      - "traefik.http.routers.lovespace-frontend-https.tls.certresolver=myresolver" # IMPORTANTE: Substitua 'myresolver' pelo nome do seu cert resolver
+      # Serviço que aponta para a porta do container Nginx
+      - "traefik.http.services.lovespace-frontend-svc.loadbalancer.server.port=80"
+
+volumes:
+  postgres_data: # Volume para persistir os dados do banco
+
+networks:
+  lovespace-net:
+    driver: bridge
+  traefik-proxy:
+    external: true # Define que esta rede já existe e é gerenciada externamente (pela stack do Traefik)
