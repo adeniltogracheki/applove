@@ -38,10 +38,10 @@ services:
       # --- Configuração do Traefik para o Backend ---
       - "traefik.enable=true"
       # Roteador para HTTP (será redirecionado para HTTPS pelo Traefik globalmente)
-      - "traefik.http.routers.lovespace-backend-http.rule=Host(`lovespace.seusite.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.lovespace-backend-http.rule=Host(`lovespace.gmtec.tec.br`) && PathPrefix(`/api`)"
       - "traefik.http.routers.lovespace-backend-http.entrypoints=web"
       # Roteador para HTTPS
-      - "traefik.http.routers.lovespace-backend-https.rule=Host(`lovespace.seusite.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.lovespace-backend-https.rule=Host(`lovespace.gmtec.tec.br`) && PathPrefix(`/api`)"
       - "traefik.http.routers.lovespace-backend-https.entrypoints=websecure"
       - "traefik.http.routers.lovespace-backend-https.tls=true"
       - "traefik.http.routers.lovespace-backend-https.tls.certresolver=myresolver" # IMPORTANTE: Substitua 'myresolver' pelo nome do seu cert resolver do Let's Encrypt no Traefik
@@ -65,10 +65,10 @@ services:
       # --- Configuração do Traefik para o Frontend ---
       - "traefik.enable=true"
       # Roteador para HTTP (será redirecionado para HTTPS)
-      - "traefik.http.routers.lovespace-frontend-http.rule=Host(`lovespace.seusite.com`)"
+      - "traefik.http.routers.lovespace-frontend-http.rule=Host(`lovespace.gmtec.tec.br`)"
       - "traefik.http.routers.lovespace-frontend-http.entrypoints=web"
       # Roteador para HTTPS
-      - "traefik.http.routers.lovespace-frontend-https.rule=Host(`lovespace.seusite.com`)"
+      - "traefik.http.routers.lovespace-frontend-https.rule=Host(`lovespace.gmtec.tec.br`)"
       - "traefik.http.routers.lovespace-frontend-https.entrypoints=websecure"
       - "traefik.http.routers.lovespace-frontend-https.tls=true"
       - "traefik.http.routers.lovespace-frontend-https.tls.certresolver=myresolver" # IMPORTANTE: Substitua 'myresolver' pelo nome do seu cert resolver
