@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import pool from './db';
@@ -7,9 +7,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Fix: Removed explicit Express type to allow TypeScript to infer it correctly,
-// which resolves middleware type conflicts.
-const app = express();
+// Fix: Explicitly type `app` as `Express` to ensure correct type inference for middleware.
+const app: Express = express();
 app.use(cors());
 app.use(express.json());
 
