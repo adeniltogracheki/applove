@@ -1,6 +1,7 @@
 
 
-import express, { Express, json } from 'express';
+
+import express, { Express } from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import pool from './db';
@@ -12,8 +13,8 @@ dotenv.config();
 // FIX: Explicitly type `app` as `Express` to resolve type inference issues with middleware.
 const app: Express = express();
 app.use(cors());
-// FIX: The `express.json()` middleware was causing a TypeScript overload error. Using the named import `json` and calling it directly resolves the type ambiguity.
-app.use(json());
+// FIX: Using `express.json()` and removing the named `json` import to resolve a TypeScript overload error with `app.use()`.
+app.use(express.json());
 
 // Inicializa o cliente da API Gemini
 let ai: GoogleGenAI | null = null;
@@ -39,7 +40,7 @@ app.post('/api/signup', async (req, res) => {
   const { username, password } = req.body;
   try {
     const userExists = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-    if (userExists.rowCount > 0) {
+    if (userExists.rows.length > 0) {
       return res.status(409).json({ message: 'Nome de usuário já existe.' });
     }
     const passwordHash = await bcrypt.hash(password, 10);
@@ -62,7 +63,7 @@ app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
     const result = await pool.query('SELECT * FROM users WHERE username = $1 AND auth_method = $2', [username, 'manual']);
-    if (result.rowCount === 0) {
+    if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Nome de usuário ou senha inválidos.' });
     }
     const user = result.rows[0];
@@ -84,7 +85,7 @@ app.post('/api/google-signin', async (req, res) => {
     const { email, name, picture } = req.body;
     try {
         let result = await pool.query('SELECT * FROM users WHERE username = $1', [email]);
-        if (result.rowCount > 0) {
+        if (result.rows.length > 0) {
             const user = result.rows[0];
             if (user.auth_method !== 'google') {
                 return res.status(409).json({ message: 'Já existe uma conta com este e-mail.' });
@@ -110,7 +111,7 @@ app.post('/api/link-partner', async (req, res) => {
     const { currentUser, partnerCode } = req.body;
     try {
         const partnerResult = await pool.query('SELECT * FROM users WHERE unique_code = $1', [partnerCode.toUpperCase()]);
-        if (partnerResult.rowCount === 0 || partnerResult.rows[0].username === currentUser.username) {
+        if (partnerResult.rows.length === 0 || partnerResult.rows[0].username === currentUser.username) {
             return res.status(404).json({ message: 'Código de vínculo inválido ou pertence a você.' });
         }
 
@@ -133,7 +134,7 @@ app.post('/api/user/anniversary', async (req, res) => {
         await pool.query('UPDATE users SET anniversary_date = $1 WHERE unique_code = $2 OR linked_partner_code = $2', [anniversaryDate, userCode]);
         
         const updatedUserResult = await pool.query(`SELECT ${userFields} FROM users WHERE unique_code = $1`, [userCode]);
-        if (updatedUserResult.rowCount === 0) {
+        if (updatedUserResult.rows.length === 0) {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
@@ -151,7 +152,7 @@ app.get('/api/partner/:user_code', async (req, res) => {
     try {
         // Primeiro, pega o código do parceiro do usuário atual
         const currentUserResult = await pool.query('SELECT linked_partner_code FROM users WHERE unique_code = $1', [user_code]);
-        if (currentUserResult.rowCount === 0 || !currentUserResult.rows[0].linked_partner_code) {
+        if (currentUserResult.rows.length === 0 || !currentUserResult.rows[0].linked_partner_code) {
             return res.status(404).json({ message: 'Parceiro não encontrado ou não vinculado.'});
         }
         const partnerCode = currentUserResult.rows[0].linked_partner_code;
@@ -160,7 +161,7 @@ app.get('/api/partner/:user_code', async (req, res) => {
         const partnerResult = await pool.query(`
             SELECT username, display_name AS "displayName", picture_url AS "pictureUrl" 
             FROM users WHERE unique_code = $1`, [partnerCode]);
-        if (partnerResult.rowCount === 0) {
+        if (partnerResult.rows.length === 0) {
             return res.status(404).json({ message: 'Dados do parceiro não encontrados.' });
         }
 
