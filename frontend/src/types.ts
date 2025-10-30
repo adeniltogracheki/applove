@@ -4,6 +4,8 @@ export type AuthView = 'welcome' | 'login' | 'signup';
 export interface LoveJarItem {
   id: number;
   text: string;
+  authorCode: string;
+  authorPictureUrl?: string;
 }
 
 export interface MemoryItem {

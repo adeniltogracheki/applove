@@ -30,7 +30,7 @@ const MainApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLogou
     anniversaryDate.setMinutes(anniversaryDate.getMinutes() + anniversaryDate.getTimezoneOffset());
 
     switch (view) {
-      case 'lovejar': return <LoveJar />;
+      case 'lovejar': return <LoveJar user={user} />;
       case 'qa': return <CoupleQA />;
       case 'memories': return <Memories />;
       case 'chat': return <Chat />;
