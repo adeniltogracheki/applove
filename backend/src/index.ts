@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { Express, json } from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import pool from './db';
@@ -10,7 +10,8 @@ dotenv.config();
 // Fix: Explicitly type `app` as `Express` to ensure correct type inference for middleware.
 const app: Express = express();
 app.use(cors());
-app.use(express.json());
+// FIX: Use named import `json` to resolve middleware type error.
+app.use(json());
 
 let ai: GoogleGenAI | null = null;
 if (process.env.API_KEY) {
